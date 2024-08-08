@@ -1,0 +1,11 @@
+package-lock.json
+node_modules/*
+auth.json
+.aws/*
+*.txt
+quotes.csv
+quotes_backup.csv
+.vscode/*
+bot_error.txt
+bot_output.txt
+bot.log.txt

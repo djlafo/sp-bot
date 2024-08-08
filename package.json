@@ -1,0 +1,18 @@
+{
+  "name": "spbot",
+  "version": "1.0.0",
+  "description": "My First Discord Bot",
+  "main": "bot.js",
+  "author": "anonymous person",
+  "dependencies": {
+    "discord.js": "14.14.1",
+    "fast-csv": "5.0.0",
+    "forever": "^4.0.3",
+    "node-spotify-api": "1.0.7",
+    "translate": "3.0.0",
+    "uuid": "3.3",
+    "winston": "^3.11.0",
+    "xmlhttprequest": "1.8.0",
+    "youtube-search": "1.1.3"
+  }
+}
