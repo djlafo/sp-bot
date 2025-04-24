@@ -204,7 +204,7 @@ bot.on('interactionCreate', async interaction => {
                     if(indQuotes.length > 0) {
                         let retStr = '';
                         indQuotes.forEach(function(indQuote) {
-                            retStr += indQuote.person + ": " + indQuote.quote + "\n";
+                            retStr += `**${indQuote.person}**: ${indQuote.quote}\n`;
                         });
                         try {
                             await interaction.reply(retStr);
@@ -231,7 +231,7 @@ function getRandomQuote(guildId, name) {
     });
     if(indQuotes.length > 0) {
         const found = indQuotes[Math.floor(Math.random() * indQuotes.length)];
-        return found.person + ": " + found.quote;
+        return `**${found.person}**: ${found.quote}`;
     } else {
         return "No quote found";
     }
