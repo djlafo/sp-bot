@@ -73,7 +73,7 @@ async function loadQuotes() {
                 guildId: row.guildId,
                 person: row.person,
                 UUID: row.UUID,
-                quote: row.quote
+                quote: row.quote.replaceAll('\\n', '\n')
             });
         });
     await new Promise((resolve, reject) => {
