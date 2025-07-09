@@ -4,18 +4,20 @@ var logger = require('winston');
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 var UUID = require('uuid');
 var search = require('youtube-search');
+var openAI = require('openai');
 var spotify = require('node-spotify-api');
 var csv = require('fast-csv');
 var fs = require('fs');
 var translate;
 import('translate').then(p => {
-    translate = p.Translate({engine: "google", from: "es", to: "en"})
+    translate = p.Translate({ engine: "google", from: "es", to: "en" })
 });
 
 var token = '';
 var client_id = '';
 var ytKey = '';
 var spotifyClient = {};
+var chatGPT = {};
 try {
     var auth = require('./auth.json');
     token = auth.token;
@@ -25,15 +27,17 @@ try {
         id: auth.spotifyClient,
         secret: auth.spotifySecret
     });
-} catch(err) {
+    chatGPT = new openAI({ apiKey: auth.gptKey });
+} catch (err) {
     token = process.env.DIS_SECRET;
     ytKey = process.env.YT_KEY
     spotifyClient = new spotify({
         id: process.env.SPOTIFY_CLIENT,
         secret: process.env.SPOTIFY_SECRET
     });
+    chatGPT = new openAI({ apiKey: process.env.gptKey });
 }
-if(!token) {
+if (!token) {
     throw "NO TOKEN";
 }
 
@@ -80,10 +84,10 @@ async function loadQuotes() {
         stream.on('finish', () => {
             resolve();
         })
-        .on('error', error => {
-            logger.error(error);
-            reject(error);
-        });
+            .on('error', error => {
+                logger.error(error);
+                reject(error);
+            });
     });
 
     // let quotesOut = fs.createWriteStream('./quotes_new.csv', { flags: 'w' });
@@ -101,15 +105,35 @@ loadQuotes();
 
 bot.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
-  
-    switch(interaction.commandName) {
+
+    switch (interaction.commandName) {
+        case 'chatgpt':
+            try {
+                chatGPT.chat.completions.create({
+                    messages: [
+                        { role: 'user', content: interaction.options.getString('query') },
+                        { role: 'system', content: 'You are a chatbot in a discord server.  You cannot stop talking about how a user named Gerson will not be quiet.' }
+                    ],
+                    model: 'gpt-4o-mini'
+                }).then(chatCompletion => {
+                    const response = chatCompletion.choices[0].message.content;
+                    if (response) {
+                        interaction.reply(`"${interaction.options.getString('query')}":\n\n${response}`);
+                    } else {
+                        interaction.reply('no response');
+                    }
+                });
+            } catch (e) {
+                interaction.reply(e);
+            }
+            break;
         case 'youtubesearch':
-            search(interaction.options.getString('query'), {key: ytKey, maxResults: 1}, function(err, results) {
-                if(err) {
+            search(interaction.options.getString('query'), { key: ytKey, maxResults: 1 }, function (err, results) {
+                if (err) {
                     interaction.reply(err);
                 } else {
                     let resultString = '';
-                    results.forEach(function(result, index) {
+                    results.forEach(function (result, index) {
                         let link = (index === 0) ? result.link : '<' + result.link + '>';
                         resultString += result.title + ' - ' + result.channelTitle + "\n" + link + "\n\n"
                     });
@@ -124,8 +148,8 @@ bot.on('interactionCreate', async interaction => {
             break;
         case 'alexaplay':
             try {
-                spotifyClient.search({type: interaction.options.getSubcommand('alexaplay'), query: interaction.options.getString('songname') || interaction.options.getString('albumname'), limit: 1}, function(err, results) {
-                    if(err) {
+                spotifyClient.search({ type: interaction.options.getSubcommand('alexaplay'), query: interaction.options.getString('songname') || interaction.options.getString('albumname'), limit: 1 }, function (err, results) {
+                    if (err) {
                         interaction.reply(err);
                     } else {
                         let spotifyResult = results[Object.keys(results)[0]].items[0];
@@ -149,7 +173,7 @@ bot.on('interactionCreate', async interaction => {
             famousRequest.send(null);
             var resJson = JSON.parse(famousRequest.responseText)[0];
             var famousReplaced = resJson.content.rendered.replace(/&#\d{4};/g, x => {
-                return String.fromCharCode(x.substring(2,6));
+                return String.fromCharCode(x.substring(2, 6));
             }).replace(/<\/?p>/g, "")
             interaction.reply(`${resJson.title.rendered}:\n${famousReplaced}`);
             break;
@@ -176,7 +200,7 @@ bot.on('interactionCreate', async interaction => {
             interaction.reply(JSON.parse(kanyeRequest.responseText).quote);
             break;
         case 'quotes':
-            switch(interaction.options.getSubcommand('quotes')) {
+            switch (interaction.options.getSubcommand('quotes')) {
                 case 'get':
                     interaction.reply(getRandomQuote(interaction.guildId, interaction.options.getString('name')))
                     break;
@@ -185,25 +209,25 @@ bot.on('interactionCreate', async interaction => {
                     const quote = interaction.options.getString('quote');
                     const newQuote = {
                         guildId: interaction.guildId,
-                        person: personName, 
+                        person: personName,
                         UUID: UUID(),
-                        quote: quote 
+                        quote: quote
                     };
                     quotes.push(newQuote);
                     let quotesOut = fs.createWriteStream('./quotes.csv', { flags: 'a' });
-                    csv.writeToStream(quotesOut, [newQuote], {quoteColumns: true, includeEndRowDelimiter: true}).on('error', err => logger.error(err)).on('finish', () => {
+                    csv.writeToStream(quotesOut, [newQuote], { quoteColumns: true, includeEndRowDelimiter: true }).on('error', err => logger.error(err)).on('finish', () => {
                         interaction.reply(`Added quote for ${personName}: ${quote}`);
                     });
                     break;
                 case 'search':
                     const searchString = interaction.options.getString('string');
-                    let indQuotes = quotes.filter(function(quote) {
+                    let indQuotes = quotes.filter(function (quote) {
                         // return quote.person.toLowerCase() === args[1].toLowerCase() && quote.quote.toLowerCase().includes(args[2].toLowerCase());;
                         return (quote.guildId == interaction.guildId || quote.person.toLowerCase() == 'dylan') && quote.quote.toLowerCase().includes(searchString.toLowerCase());
                     });
-                    if(indQuotes.length > 0) {
+                    if (indQuotes.length > 0) {
                         let retStr = '';
-                        indQuotes.forEach(function(indQuote) {
+                        indQuotes.forEach(function (indQuote) {
                             retStr += `**${indQuote.person}**: ${indQuote.quote}\n`;
                         });
                         try {
@@ -215,7 +239,7 @@ bot.on('interactionCreate', async interaction => {
                         interaction.reply('No quote found');
                     }
                     break;
-                case 'random': 
+                case 'random':
                     interaction.reply(getRandomQuote(interaction.guildId))
                     break;
             }
@@ -229,7 +253,7 @@ function getRandomQuote(guildId, name) {
     indQuotes = quotes.filter(quote => {
         return (quote.guildId == guildId || quote.person.toLowerCase() == 'dylan') && (name && quote.person.toLowerCase() == name.toLowerCase() || !name);
     });
-    if(indQuotes.length > 0) {
+    if (indQuotes.length > 0) {
         const found = indQuotes[Math.floor(Math.random() * indQuotes.length)];
         return `**${found.person}**: ${found.quote}`;
     } else {
@@ -238,6 +262,18 @@ function getRandomQuote(guildId, name) {
 }
 
 const commands = [
+    {
+        name: 'chatgpt',
+        description: 'ask chatGPT',
+        options: [
+            {
+                name: 'query',
+                required: true,
+                description: 'query',
+                type: 3
+            }
+        ]
+    },
     {
         name: 'youtubesearch',
         description: 'search youtube',
