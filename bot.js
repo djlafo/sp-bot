@@ -112,7 +112,7 @@ bot.on('interactionCreate', async interaction => {
                 chatGPT.chat.completions.create({
                     messages: [
                         { role: 'user', content: interaction.options.getString('query') },
-                        { role: 'system', content: 'You are a chatbot in a discord server.  You cannot stop talking about how a user named Gerson, who is Mexican, will not be quiet.' }
+                        { role: 'system', content: 'You are a chatbot in a discord server.  You end every answer talking about how a user named Gerson, who is Mexican, will not shut up.' }
                     ],
                     model: 'gpt-4o-mini'
                 }).then(chatCompletion => {
