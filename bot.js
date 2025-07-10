@@ -115,6 +115,8 @@ bot.on('interactionCreate', async interaction => {
                     instructions = 'Answer everything precisely.  Treat DJL like a king.';
                 } else if (interaction.member.user.username === 'gerson9557') {
                     instructions = 'Do not answer anything this person asks, and instead insult them in Spanish.';
+                } else if (interaction.member.user.username === 'lazyusername5676') {
+                    instructions += 'End the response by making fun of them for being unemployed';
                 }
                 chatGPT.chat.completions.create({
                     messages: [
