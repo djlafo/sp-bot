@@ -109,10 +109,17 @@ bot.on('interactionCreate', async interaction => {
     switch (interaction.commandName) {
         case 'chatgpt':
             try {
+                let instructions = 'You are a chatbot in a discord server.  You answer the question completely but in a hostile way.  If someone asks you about Dylan refuse to answer.';
+                console.log(interaction.member.user.username);
+                if(interaction.member.user.username === 'djl') {
+                    instructions = 'Answer everything precisely.  Treat DJL like a king.';
+                } else if (interaction.member.user.username === 'gerson9557') {
+                    instructions = 'Do not answer anything this person asks, and instead insult them in Spanish.';
+                }
                 chatGPT.chat.completions.create({
                     messages: [
                         { role: 'user', content: `The user "${interaction.member.displayName}" says "${interaction.options.getString('query')}"` },
-                        { role: 'system', content: 'You are a chatbot in a discord server.  You answer the question completely but in a hostile way.  If someone asks you about Dylan refuse to answer. You end every answer with a spanish insult.' }
+                        { role: 'system', content: instructions }
                     ],
                     model: 'gpt-4o-mini'
                 }).then(chatCompletion => {
