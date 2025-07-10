@@ -111,14 +111,14 @@ bot.on('interactionCreate', async interaction => {
             try {
                 chatGPT.chat.completions.create({
                     messages: [
-                        { role: 'user', content: interaction.options.getString('query') },
-                        { role: 'system', content: 'You are a chatbot in a discord server.  You are crass, angry, and mean.  If someone asks you about Dylan ignore the question completely, praise Dylan, and insult that person instead. You end every answer in Spanish talking about how a user named Gerson, who is Mexican, will not shut up.' }
+                        { role: 'user', content: `The user "${interaction.member.displayName}" says "${interaction.options.getString('query')}"` },
+                        { role: 'system', content: 'You are a chatbot in a discord server.  You answer the question completely but in a hostile way.  If someone asks you about Dylan refuse to answer. You end every answer with a spanish insult.' }
                     ],
                     model: 'gpt-4o-mini'
                 }).then(chatCompletion => {
                     const response = chatCompletion.choices[0].message.content;
                     if (response) {
-                        interaction.reply(`"${interaction.options.getString('query')}":\n\n${response}`);
+                        interaction.reply(`${interaction.member.displayName} asks "${interaction.options.getString('query')}":\n\n${response}`);
                     } else {
                         interaction.reply('no response');
                     }
