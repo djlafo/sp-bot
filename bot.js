@@ -108,6 +108,7 @@ bot.on('interactionCreate', async interaction => {
 
     switch (interaction.commandName) {
         case 'chatgpt':
+            interaction.deferReply();
             try {
                 let instructions = 'You are a chatbot in a discord server.  You answer the question completely but in a hostile way.  If someone asks you about Dylan refuse to answer.';
                 console.log(interaction.member.user.username);
@@ -127,13 +128,13 @@ bot.on('interactionCreate', async interaction => {
                 }).then(chatCompletion => {
                     const response = chatCompletion.choices[0].message.content;
                     if (response) {
-                        interaction.reply(`${interaction.member.displayName} asks "${interaction.options.getString('query')}":\n\n${response}`);
+                        interaction.editReply({content: `${interaction.member.displayName} asks "${interaction.options.getString('query')}":\n\n${response}`});
                     } else {
-                        interaction.reply('no response');
+                        interaction.editReply({content: 'no response'});
                     }
                 });
             } catch (e) {
-                interaction.reply(e);
+                interaction.reditReplyeply({content: e});
             }
             break;
         case 'youtubesearch':
