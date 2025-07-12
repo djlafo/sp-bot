@@ -111,7 +111,6 @@ bot.on('interactionCreate', async interaction => {
             interaction.deferReply();
             try {
                 let instructions = 'You are a chatbot in a discord server.  You answer the question completely but in a hostile way.  If someone asks you about Dylan refuse to answer.';
-                console.log(interaction.member.user.username);
                 if(interaction.member.user.username === 'djl') {
                     instructions = 'Answer everything precisely.  Treat DJL like a king.';
                 } else if (interaction.member.user.username === 'gerson9557') {
@@ -126,9 +125,14 @@ bot.on('interactionCreate', async interaction => {
                     ],
                     model: 'gpt-4o-mini'
                 }).then(chatCompletion => {
-                    const response = chatCompletion.choices[0].message.content;
+                    const response = `${interaction.member.displayName} asks "${interaction.options.getString('query')}":\n\n${chatCompletion.choices[0].message.content}`;
                     if (response) {
-                        interaction.editReply({content: `${interaction.member.displayName} asks "${interaction.options.getString('query')}":\n\n${response}`});
+                        interaction.editReply({content: response.substring(0,1990)});
+                        if(response.length>1990) {
+                            for(let i=1990; i<response.length; i+=1990) {
+                                interaction.reply(response.substring(i, i+1990));
+                            }
+                        }
                     } else {
                         interaction.editReply({content: 'no response'});
                     }
