@@ -110,13 +110,11 @@ bot.on('interactionCreate', async interaction => {
         case 'chatgpt':
             interaction.deferReply();
             try {
-                let instructions = 'You are a chatbot in a discord server.  You answer the question completely but in a hostile way.  If someone asks you about Dylan refuse to answer.';
-                if(interaction.member.user.username === 'djl') {
-                    instructions = 'Answer everything precisely.  Treat DJL like a king.';
-                } else if (interaction.member.user.username === 'gerson9557') {
-                    instructions = 'Do not answer anything this person asks, and instead insult them in Spanish.';
+                let instructions = 'You are a discord bot where people can ask you questions. ';
+                if (interaction.member.user.username === 'gerson9557') {
+                    instructions += 'Answer in spanish.';
                 } else if (interaction.member.user.username === 'lazyusername5676') {
-                    instructions += 'End the response by telling them to focus on their terrible legacy government code.';
+                    instructions += 'End the response by telling them to focus on their legacy government code.';
                 }
                 chatGPT.chat.completions.create({
                     messages: [
