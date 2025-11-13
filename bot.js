@@ -288,8 +288,10 @@ bot.on('messageCreate', async message => {
             if(ref.author.username === bot.user.username) {
                 const character = characters.find(c => ref.content.startsWith(c.name));
                 await replyToMessage(message, character);
+                return;
             }
-        } else if (message.mentions.has(bot.user)) {
+        }
+        if (message.mentions.has(bot.user)) {
             await replyToMessage(message);
         } else if ((char = (characters.find(c => c.references.some(r => message.content.toLowerCase().includes(`@${r}`)))))) {
             await replyToMessage(message, char);
