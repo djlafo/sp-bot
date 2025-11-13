@@ -259,7 +259,7 @@ const replyToMessage = async (message, character) => {
     const messageString = `The conversation history is as follows: \n${lastMessages.join("\n")}`;
     // logger.info(messageString);
     try {
-        let instructions = `You are the playing the character ${character.name} in a conversation.${character.instructions} DO NOT PUT ANY NAMES AT THE BEGINNING OF YOUR RESPONSE. You are responding to the last person in the conversation.`;
+        let instructions = `You are the playing the character ${character.name} in a conversation.${character.instructions} DO NOT PUT ANY NAMES AT THE BEGINNING OF YOUR RESPONSE. You are responding to the last person in the conversation.  Return the response your character would have.`;
         if (message.author.username === 'gerson9557') {
             instructions += 'Answer in spanish.';
         } else if (message.author.username === 'lazyusername5676') {
