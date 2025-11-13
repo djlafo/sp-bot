@@ -105,30 +105,6 @@ async function loadQuotes() {
     // }), {headers: true, quoteColumns: true, includeEndRowDelimiter: true}).on('error', err => logger.error(err));
 }
 loadQuotes();
-/* END CONFIG */
-
-const fetchLastMessages = async (message) => {
-    const messages = await message.channel.messages.fetch({limit: 20});
-    const mapped = messages.map(async dm => {
-        let content = dm.content;
-        dm.mentions.users.forEach((user) => {
-            content = content.replaceAll(`<@${user.id}>`, `<@${user.displayName}>`);
-            content = content.replaceAll(`<@!${user.id}>`, `<@${user.displayName}>`); // handles nickname mention form
-        });
-        if (dm.reference) {
-            const repliedMessage = await dm.fetchReference();
-            const replyUser = repliedMessage.author.displayName;
-            content = `<@${replyUser}> ${content}`;
-        }
-        content = `[${dm.author.displayName}]: ${content}`;
-        for (let i=0; i < message.embeds.length; i++) {
-            const embed = message.embeds[i]; // first embed
-            content += `\n<@${replyUser}> shared a link titled "${embed.title}" with the description "${embed.description}"}`;
-        }
-        return content;
-    });
-    return await Promise.all(mapped);
-}
 
 const characters = [
     {
@@ -228,7 +204,7 @@ const characters = [
     },
     {
         name: 'Gavin Newsome',
-        references: ['gavin', 'newsome'],
+        references: ['newsome', 'gavin'],
         instructions: ''
     },
     {
@@ -248,12 +224,40 @@ const characters = [
     }
 ];
 
+/* END CONFIG */
+
+const fetchLastMessages = async (message) => {
+    const messages = await message.channel.messages.fetch({limit: 20});
+    const mapped = messages.map(async dm => {
+        let content = dm.content;
+        dm.mentions.users.forEach((user) => {
+            content = content.replaceAll(`<@${user.id}>`, `@[${user.displayName}]`);
+            content = content.replaceAll(`<@!${user.id}>`, `@[${user.displayName}]`); // handles nickname mention form
+        });
+        if (dm.reference) {
+            const repliedMessage = await dm.fetchReference();
+            const refName = repliedMessage.content.split(':')[0];
+            const replyUser = repliedMessage.author.username === bot.user.username ? refName : repliedMessage.author.displayName;
+            content = `@[${replyUser}] ${content}`;
+        }
+        const botName = dm.author.username === bot.user.username ? content.split(':')[0] : dm.author.displayName;
+        content = `[${botName}]: ${content}`;
+        for (let i=0; i < message.embeds.length; i++) {
+            const embed = message.embeds[i]; // first embed
+            content += `\n[${replyUser}] shared a link titled "${embed.title}" with the description "${embed.description}"}`;
+        }
+        return content;
+    });
+    return await Promise.all(mapped);
+}
+
 const replyToMessage = async (message, character) => {
     if(!character) {
         character = characters[0];
     }
     const lastMessages = (await fetchLastMessages(message)).reverse();
     const messageString = `The conversation history is as follows: \n${lastMessages.join("\n")}`;
+    // logger.info(messageString);
     try {
         let instructions = `You are the playing the character ${character.name} in a conversation.${character.instructions} DO NOT PUT ANY NAMES AT THE BEGINNING OF YOUR RESPONSE. You are responding to the last person in the conversation.`;
         if (message.author.username === 'gerson9557') {
@@ -269,7 +273,7 @@ const replyToMessage = async (message, character) => {
             model: 'x-ai/grok-4-fast'
         });
         const grokTrim = chatCompletion.choices[0].message.content.split(`${character.name}:`);
-        const response = `${character.name}: ${grokTrim.length === 2 ? grokTrim[1] : grokTrim[0]}`;
+        const response = `${character.name}: ${grokTrim.length >= 2 ? grokTrim[grokTrim.length-1] : grokTrim[0]}`;
         if (response) {
             const messageContent = {content: response.substring(0,1900), withResponse: true};
             if(message.author.bot && Math.random() < 0.2) {
