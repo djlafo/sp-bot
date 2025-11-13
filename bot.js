@@ -108,7 +108,7 @@ loadQuotes();
 /* END CONFIG */
 
 const fetchLastMessages = async (message) => {
-    const messages = await message.channel.messages.fetch({limit: 10});
+    const messages = await message.channel.messages.fetch({limit: 20});
     const mapped = messages.map(async dm => {
         let content = dm.content;
         dm.mentions.users.forEach((user) => {
