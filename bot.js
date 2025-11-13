@@ -229,7 +229,7 @@ const characters = [
 const fetchLastMessages = async (message) => {
     const messages = await message.channel.messages.fetch({limit: 20});
     const mapped = messages.map(async dm => {
-        let content = dm.content;
+        let content = trimChat(dm.content);
         dm.mentions.users.forEach((user) => {
             content = content.replaceAll(`<@${user.id}>`, `@[${user.displayName}]`);
             content = content.replaceAll(`<@!${user.id}>`, `@[${user.displayName}]`); // handles nickname mention form
@@ -240,8 +240,8 @@ const fetchLastMessages = async (message) => {
             const replyUser = repliedMessage.author.username === bot.user.username ? refName : repliedMessage.author.displayName;
             content = `@[${replyUser}] ${content}`;
         }
-        const botName = dm.author.username === bot.user.username ? content.split(':')[0] : dm.author.displayName;
-        content = `[${botName}]: ${content}`;
+        const contentName = dm.author.username === bot.user.username ? content.split(':')[0] : dm.author.displayName;
+        content = `[${contentName}]: ${content}`;
         for (let i=0; i < message.embeds.length; i++) {
             const embed = message.embeds[i]; // first embed
             content += `\n[${replyUser}] shared a link titled "${embed.title}" with the description "${embed.description}"}`;
@@ -249,6 +249,16 @@ const fetchLastMessages = async (message) => {
         return content;
     });
     return await Promise.all(mapped);
+}
+
+const trimChat = (text) => {
+    let craftSplit = text.split('Crafted Response');
+    let craftTrim = craftSplit.length > 1 ? craftSplit[craftSplit.length-1] : craftSplit[0];
+    let charSplit = craftTrim.split(`${character.name}:`);
+    let grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
+    charSplit = grokTrim.split(`[${character.name}]:`);
+    grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
+    return grokTrim;
 }
 
 const replyToMessage = async (message, character) => {
@@ -272,10 +282,7 @@ const replyToMessage = async (message, character) => {
             ],
             model: 'x-ai/grok-4-fast'
         });
-        let craftSplit = chatCompletion.choices[0].message.content.split('Crafted Response');
-        let craftTrim = craftSplit.length > 1 ? craftSplit[craftSplit.length-1] : craftSplit[0];
-        let charSplit = craftTrim.split(`${character.name}:`);
-        let grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
+        const grokTrim = trimChat(chatCompletion.choices[0].message.content);
         const response = `${character.name}: ${grokTrim}`;
         if (response) {
             const messageContent = {content: response.substring(0,1900), withResponse: true};
