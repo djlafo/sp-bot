@@ -231,20 +231,29 @@ const fetchLastMessages = async (message) => {
     const mapped = messages.map(async dm => {
         let content = trimChat(dm.content, dm.author.username);
         dm.mentions.users.forEach((user) => {
-            content = content.replaceAll(`<@${user.id}>`, `@[${user.displayName}]`);
-            content = content.replaceAll(`<@!${user.id}>`, `@[${user.displayName}]`); // handles nickname mention form
+            content = content.replaceAll(`<@${user.id}>`, `@${user.username}`);
+            content = content.replaceAll(`<@!${user.id}>`, `@${user.username}`); // handles nickname mention form
         });
         if (dm.reference) {
             const repliedMessage = await dm.fetchReference();
             const refName = repliedMessage.content.split(':')[0];
             const replyUser = repliedMessage.author.username === bot.user.username ? refName : repliedMessage.author.displayName;
-            content = `@[${replyUser}] ${content}`;
+            content = `@${replyUser} ${content}`;
         }
-        const contentName = dm.author.username === bot.user.username ? content.split(':')[0] : dm.author.displayName;
-        content = `[${contentName}]: ${content}`;
+        let contentName = '';
+        let contentUser = '';
+        if(dm.author.username === bot.user.username) {
+            const name = content.split(':')[0];
+            contentName = name.split('[')[0];
+            contentUser = name.split('[')[1]?.split(']')[0] || bot.user.username;
+        } else {
+            contentName = dm.author.displayName;
+            contentUser = dm.author.username;
+        }
+        content = `${contentName}[@${contentUser}]: ${content}`;
         for (let i=0; i < message.embeds.length; i++) {
             const embed = message.embeds[i]; // first embed
-            content += `\n[${replyUser}] shared a link titled "${embed.title}" with the description "${embed.description}"}`;
+            content += `\n${replyUser} shared a link titled "${embed.title}" with the description "${embed.description}"}`;
         }
         return content;
     });
@@ -254,6 +263,8 @@ const fetchLastMessages = async (message) => {
 const trimChat = (text, name) => {
     let craftSplit = text.split('Crafted Response');
     let craftTrim = craftSplit.length > 1 ? craftSplit[craftSplit.length-1] : craftSplit[0];
+    craftSplit = text.split('**Final Answer:**');
+    craftTrim = craftSplit.length > 1 ? craftSplit[craftSplit.length-1] : craftSplit[0];
     let charSplit = craftTrim.split(`${name}:`);
     let grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
     charSplit = grokTrim.split(`[${name}]:`);
@@ -283,7 +294,7 @@ const replyToMessage = async (message, character) => {
             model: 'x-ai/grok-4-fast'
         });
         const grokTrim = trimChat(chatCompletion.choices[0].message.content, character.name);
-        const response = `${character.name}: ${grokTrim}`;
+        const response = `${character.name}[@${character.references[0]}]: ${grokTrim}`;
         if (response) {
             const messageContent = {content: response.substring(0,1900), withResponse: true};
             if(message.author.bot) {
