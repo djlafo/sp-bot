@@ -268,7 +268,8 @@ const replyToMessage = async (message, character) => {
             ],
             model: 'x-ai/grok-4-fast'
         });
-        const response = `${character.name}: ${chatCompletion.choices[0].message.content}`;
+        const grokTrim = chatCompletion.choices[0].message.content.split(`${character.name}:`);
+        const response = `${character.name}: ${grokTrim.length === 2 ? grokTrim[1] : grokTrim[0]}`;
         if (response) {
             const messageContent = {content: response.substring(0,1900), withResponse: true};
             if(message.author.bot && Math.random() < 0.2) {
