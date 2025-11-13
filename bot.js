@@ -128,7 +128,7 @@ bot.on('interactionCreate', async interaction => {
                         interaction.editReply({content: response.substring(0,1500)});
                         if(response.length>1500) {
                             for(let i=1500; i<response.length; i+=1500) {
-                                interaction.send(response.substring(i, i+1500));
+                                interaction.reply(response.substring(i, i+1500));
                             }
                         }
                     } else {
