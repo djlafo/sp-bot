@@ -272,25 +272,28 @@ const replyToMessage = async (message, character) => {
             ],
             model: 'x-ai/grok-4-fast'
         });
-        const grokTrim = chatCompletion.choices[0].message.content.split(`${character.name}:`);
-        const response = `${character.name}: ${grokTrim.length >= 2 ? grokTrim[grokTrim.length-1] : grokTrim[0]}`;
+        let craftSplit = chatCompletion.choices[0].message.content.split('Crafted Response');
+        let craftTrim = craftSplit.length > 1 ? craftSplit[craftSplit.length-1] : craftSplit[0];
+        let charSplit = craftTrim.split(`${character.name}:`);
+        let grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
+        const response = `${character.name}: ${grokTrim}`;
         if (response) {
             const messageContent = {content: response.substring(0,1900), withResponse: true};
             if(message.author.bot) {
                 if(message.author.bot && Math.random() < 0.2) {
-                    let reply = await message.reply(messageContent);
+                    await message.reply(messageContent);
                 }
             } else {
-                let reply = await message.reply(messageContent);
+                 await message.reply(messageContent);
                 for(let currentChar = 1900; currentChar<response.length; currentChar += 1900) {
-                    reply = await message.followUp({content: response.substring(currentChar, currentChar+1900), withResponse: true});
+                    await message.followUp({content: response.substring(currentChar, currentChar+1900), withResponse: true});
                 }
             }
         } else {
             message.reply({content: 'no response'});
         }
     } catch (e) {
-        message.followUp({content: e.toString()});
+        message.reply({content: e.toString()});
     }
 }
 
