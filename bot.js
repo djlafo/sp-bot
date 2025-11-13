@@ -229,7 +229,7 @@ const characters = [
 const fetchLastMessages = async (message) => {
     const messages = await message.channel.messages.fetch({limit: 20});
     const mapped = messages.map(async dm => {
-        let content = trimChat(dm.content);
+        let content = trimChat(dm.content, dm.author.username);
         dm.mentions.users.forEach((user) => {
             content = content.replaceAll(`<@${user.id}>`, `@[${user.displayName}]`);
             content = content.replaceAll(`<@!${user.id}>`, `@[${user.displayName}]`); // handles nickname mention form
@@ -251,12 +251,12 @@ const fetchLastMessages = async (message) => {
     return await Promise.all(mapped);
 }
 
-const trimChat = (text) => {
+const trimChat = (text, name) => {
     let craftSplit = text.split('Crafted Response');
     let craftTrim = craftSplit.length > 1 ? craftSplit[craftSplit.length-1] : craftSplit[0];
-    let charSplit = craftTrim.split(`${character.name}:`);
+    let charSplit = craftTrim.split(`${name}:`);
     let grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
-    charSplit = grokTrim.split(`[${character.name}]:`);
+    charSplit = grokTrim.split(`[${name}]:`);
     grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
     return grokTrim;
 }
@@ -282,7 +282,7 @@ const replyToMessage = async (message, character) => {
             ],
             model: 'x-ai/grok-4-fast'
         });
-        const grokTrim = trimChat(chatCompletion.choices[0].message.content);
+        const grokTrim = trimChat(chatCompletion.choices[0].message.content, character.name);
         const response = `${character.name}: ${grokTrim}`;
         if (response) {
             const messageContent = {content: response.substring(0,1900), withResponse: true};
