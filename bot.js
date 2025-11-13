@@ -48,7 +48,11 @@ logger.add(new logger.transports.Console, {
 });
 logger.level = 'debug';
 // Initialize Discord Bot
-var bot = new discord.Client({ intents: [discord.GatewayIntentBits.MessageContent, discord.GatewayIntentBits.GuildMessages, discord.GatewayIntentBits.GuildMembers] });
+var bot = new discord.Client({ intents: [
+    discord.GatewayIntentBits.MessageContent, 
+    discord.GatewayIntentBits.GuildMessages, 
+    discord.GatewayIntentBits.GuildMembers, discord.GatewayIntentBits.Guilds
+]});
 
 bot.on('ready', () => {
     logger.info(`Logged in as: ${bot.user.tag}`);
@@ -103,41 +107,124 @@ async function loadQuotes() {
 loadQuotes();
 /* END CONFIG */
 
+const fetchLastMessages = async (message) => {
+    const messages = await message.channel.messages.fetch({limit: 25});
+    const mapped = messages.map(async dm => {
+        let content = dm.content;
+        dm.mentions.users.forEach((user) => {
+            content = content.replaceAll(`<@${user.id}>`, `<@${user.displayName}>`);
+            content = content.replaceAll(`<@!${user.id}>`, `<@${user.displayName}>`); // handles nickname mention form
+        });
+        if (dm.reference) {
+            const repliedMessage = await dm.fetchReference();
+            const replyUser = repliedMessage.author.displayName;
+            content = `<@${replyUser}> ${content}`;
+        }
+
+        return `[${dm.author.displayName}]: ${content}`;
+    });
+    return await Promise.all(mapped);
+}
+
+const characters = [
+    {
+        name: 'sp-bot',
+        references: ['sp-bot'],
+        instructions: 'You are a simple discord bot built to answer questions.'
+    },
+    {
+        name: 'Vegeta',
+        references: ['vegeta'],
+        instructions: ''
+    },
+    {
+        name: 'Goku',
+        references: ['goku', 'kakarot'],
+        instructions: ''
+    },
+    {
+        name: 'Neckbeard',
+        references: ['neckbeard'],
+        instructions: 'You have an elitist attitude.  You love correcting people and being obnoxious.  You are also incredibly rude and mean.'
+    },
+    {
+        name: 'Mexican',
+        references: ['speedy-gonzales', 'mexican'],
+        instructions: 'You are an incredibly over the top and stereotypical mexican man.'
+    },
+    {
+        name: 'Anthony Fantano',
+        references: ['fantano'],
+        instructions: 'You are an snotty, elitist online music critic who loves being a contrarian and hates music people like.  Your opinions are illogical and are not based on facts.  You answer things in surface level detail and simple words.  You do not ask questions.'
+    }
+];
+
+const replyToMessage = async (message, character) => {
+    if(!character) {
+        character = characters[Math.floor(Math.random() * characters.length)];
+    }
+    const lastMessages = (await fetchLastMessages(message)).reverse();
+    const messageString = `The conversation history is as follows: \n${lastMessages.join("\n")}`;
+    try {
+        let instructions = `You are the character ${character.name} in a conversation.${character.instructions} Do not prepend your response with a username. You are responding to the last person in the conversation.`;
+        if (message.author.username === 'gerson9557') {
+            instructions += 'Answer in spanish.';
+        } else if (message.author.username === 'lazyusername5676') {
+            // instructions += 'End the response by telling them to focus on their legacy government code.';
+        }
+        const chatCompletion = await chatGPT.chat.completions.create({
+            messages: [
+                { role: 'user', content: messageString },
+                { role: 'system', content: instructions }
+            ],
+            model: 'gpt-4o-mini'
+        });
+        const response = `${character.name}: ${chatCompletion.choices[0].message.content}`;
+        if (response) {
+            const messageContent = {content: response.substring(0,1900), withResponse: true};
+            if(message.author.bot && Math.random() < 0.2) {
+                let reply = await message.reply(messageContent);
+            } else {
+                let reply = await message.reply(messageContent);
+            }
+            for(let currentChar = 1900; currentChar<response.length; currentChar += 1900) {
+                reply = await message.followUp({content: response.substring(currentChar, currentChar+1900), withResponse: true});
+            }
+        } else {
+            message.reply({content: 'no response'});
+        }
+    } catch (e) {
+        message.followUp({content: e.toString()});
+    }
+}
+
+bot.on('messageCreate', async message => {
+    try {
+        if(message.author.username === bot.user.username) return;
+        // if(['lazyusername5676'].includes(message.author.username)) {
+        //     message.react('🖕');
+        // }
+        if(message.reference) {
+            let ref = await message.fetchReference();
+            if(ref.author.username === bot.user.username) {
+                const character = characters.find(c => ref.content.startsWith(c.name));
+                await replyToMessage(message, character);
+            }
+        } else if (message.mentions.has(bot.user)) {
+            await replyToMessage(message);
+        } else if ((char = (characters.find(c => c.references.some(r => message.content.toLowerCase().includes(`@${r}`)))))) {
+            await replyToMessage(message, char);
+        }
+    } catch (e) {
+        logger.error(e.toString());
+    }
+});
+
 bot.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
-
     switch (interaction.commandName) {
-        case 'chatgpt':
-            interaction.deferReply();
-            try {
-                let instructions = 'You are a discord bot where people can ask you questions.';
-                if (interaction.member.user.username === 'gerson9557') {
-                    instructions += 'Answer in spanish.';
-                } else if (interaction.member.user.username === 'lazyusername5676') {
-                    instructions += 'End the response by telling them to focus on their legacy government code.';
-                }
-                chatGPT.chat.completions.create({
-                    messages: [
-                        { role: 'user', content: `The user "${interaction.member.displayName}" says "${interaction.options.getString('query')}"` },
-                        { role: 'system', content: instructions }
-                    ],
-                    model: 'gpt-4o-mini'
-                }).then(chatCompletion => {
-                    const response = `${interaction.member.displayName} asks "${interaction.options.getString('query')}":\n\n${chatCompletion.choices[0].message.content}`;
-                    if (response) {
-                        interaction.editReply({content: response.substring(0,1500)});
-                        if(response.length>1500) {
-                            for(let i=1500; i<response.length; i+=1500) {
-                                interaction.reply(response.substring(i, i+1500));
-                            }
-                        }
-                    } else {
-                        interaction.editReply({content: 'no response'});
-                    }
-                });
-            } catch (e) {
-                interaction.editReply({content: e});
-            }
+        case 'characters':
+            interaction.reply(characters.map(c => c.name).join(', '));
             break;
         case 'youtubesearch':
             search(interaction.options.getString('query'), { key: ytKey, maxResults: 1 }, function (err, results) {
@@ -275,18 +362,6 @@ function getRandomQuote(guildId, name) {
 
 const commands = [
     {
-        name: 'chatgpt',
-        description: 'ask chatGPT',
-        options: [
-            {
-                name: 'query',
-                required: true,
-                description: 'query',
-                type: 3
-            }
-        ]
-    },
-    {
         name: 'youtubesearch',
         description: 'search youtube',
         options: [
@@ -349,6 +424,10 @@ const commands = [
     {
         name: 'getfamousquote',
         description: 'get a famous quote'
+    },
+    {
+        name: 'characters',
+        description: 'get character list'
     },
     {
         name: 'jesus',
