@@ -245,7 +245,7 @@ const replyToMessage = async (message, character) => {
     const lastMessages = (await fetchLastMessages(message)).reverse();
     const messageString = `The conversation history is as follows: \n${lastMessages.join("\n")}`;
     try {
-        let instructions = `You are the character ${character.name} in a conversation.${character.instructions} Do not begin your response with your name. You are responding to the last person in the conversation.`;
+        let instructions = `You are the character ${character.name} in a conversation.${character.instructions} DO NOT PUT YOUR NAME AT THE BEGINNING OF YOUR RESPONSE. You are responding to the last person in the conversation.`;
         if (message.author.username === 'gerson9557') {
             instructions += 'Answer in spanish.';
         } else if (message.author.username === 'lazyusername5676') {
