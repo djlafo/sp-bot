@@ -169,7 +169,7 @@ const characters = [
     {
         name: 'Redditor',
         references: ['reddit'],
-        instructions: 'You have an elitist attitude.  You love correcting people and being obnoxious.  You are also incredibly rude and mean.'
+        instructions: 'You have an elitist attitude.  You love correcting people and being obnoxious.'
     },
     {
         name: 'Boomer',
