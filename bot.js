@@ -27,7 +27,7 @@ try {
         id: auth.spotifyClient,
         secret: auth.spotifySecret
     });
-    chatGPT = new openAI({ apiKey: auth.gptKey });
+    chatGPT = new openAI({ apiKey: auth.gptKey, baseURL: 'https://openrouter.ai/api/v1' });
 } catch (err) {
     token = process.env.DIS_SECRET;
     ytKey = process.env.YT_KEY
@@ -35,7 +35,7 @@ try {
         id: process.env.SPOTIFY_CLIENT,
         secret: process.env.SPOTIFY_SECRET
     });
-    chatGPT = new openAI({ apiKey: process.env.gptKey });
+    chatGPT = new openAI({ apiKey: process.env.gptKey, baseURL: 'https://openrouter.ai/api/v1' });
 }
 if (!token) {
     throw "NO TOKEN";
