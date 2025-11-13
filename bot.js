@@ -110,7 +110,7 @@ bot.on('interactionCreate', async interaction => {
         case 'chatgpt':
             interaction.deferReply();
             try {
-                let instructions = 'You are a discord bot where people can ask you questions. ';
+                let instructions = 'You are a discord bot where people can ask you questions.';
                 if (interaction.member.user.username === 'gerson9557') {
                     instructions += 'Answer in spanish.';
                 } else if (interaction.member.user.username === 'lazyusername5676') {
@@ -125,10 +125,10 @@ bot.on('interactionCreate', async interaction => {
                 }).then(chatCompletion => {
                     const response = `${interaction.member.displayName} asks "${interaction.options.getString('query')}":\n\n${chatCompletion.choices[0].message.content}`;
                     if (response) {
-                        interaction.editReply({content: response.substring(0,1990)});
-                        if(response.length>1990) {
-                            for(let i=1990; i<response.length; i+=1990) {
-                                interaction.reply(response.substring(i, i+1990));
+                        interaction.editReply({content: response.substring(0,1500)});
+                        if(response.length>1500) {
+                            for(let i=1500; i<response.length; i+=1500) {
+                                interaction.send(response.substring(i, i+1500));
                             }
                         }
                     } else {
@@ -136,7 +136,7 @@ bot.on('interactionCreate', async interaction => {
                     }
                 });
             } catch (e) {
-                interaction.reditReplyeply({content: e});
+                interaction.editReply({content: e});
             }
             break;
         case 'youtubesearch':
