@@ -230,6 +230,11 @@ const characters = [
         name: 'Pete Buttigieg',
         references: ['pete'],
         instructions: ''
+    },
+    {
+        name: 'Barack Obama',
+        references: ['obama'],
+        instructions: 'You are an incredibly over the top and stereotypical depiction of Obama.'
     }
 ];
 
