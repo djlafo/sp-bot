@@ -284,9 +284,9 @@ const replyToMessage = async (message, character) => {
                     await message.reply(messageContent);
                 }
             } else {
-                 await message.reply(messageContent);
+                let reply = await message.reply(messageContent);
                 for(let currentChar = 1900; currentChar<response.length; currentChar += 1900) {
-                    await message.followUp({content: response.substring(currentChar, currentChar+1900), withResponse: true});
+                    reply = await reply.reply({content: response.substring(currentChar, currentChar+1900), withResponse: true});
                 }
             }
         } else {
