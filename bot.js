@@ -276,13 +276,15 @@ const replyToMessage = async (message, character) => {
         const response = `${character.name}: ${grokTrim.length >= 2 ? grokTrim[grokTrim.length-1] : grokTrim[0]}`;
         if (response) {
             const messageContent = {content: response.substring(0,1900), withResponse: true};
-            if(message.author.bot && Math.random() < 0.2) {
-                let reply = await message.reply(messageContent);
+            if(message.author.bot) {
+                if(message.author.bot && Math.random() < 0.2) {
+                    let reply = await message.reply(messageContent);
+                }
             } else {
                 let reply = await message.reply(messageContent);
-            }
-            for(let currentChar = 1900; currentChar<response.length; currentChar += 1900) {
-                reply = await message.followUp({content: response.substring(currentChar, currentChar+1900), withResponse: true});
+                for(let currentChar = 1900; currentChar<response.length; currentChar += 1900) {
+                    reply = await message.followUp({content: response.substring(currentChar, currentChar+1900), withResponse: true});
+                }
             }
         } else {
             message.reply({content: 'no response'});
