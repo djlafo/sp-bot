@@ -276,7 +276,7 @@ const replyToMessage = async (message, character) => {
     const messageString = `The conversation history is as follows: \n${lastMessages.join("\n")}`;
     // logger.info(messageString);
     try {
-        let instructions = `You are the playing the character ${character.name} in a conversation.${character.instructions} DO NOT PUT ANY NAMES AT THE BEGINNING OF YOUR RESPONSE. ONLY RETURN THE CRAFTED RESPONSE.  You are responding to the last person in the conversation.`;
+        let instructions = `You are ${character.name} in a discord conversation.${character.instructions} ONLY RESPOND WITH WHAT YOU WOULD SAY.  DO NOT BEGIN YOUR RESPONSE WITH YOUR NAME OR USERNAME.  You are responding to the last person in the conversation.`;
         if (message.author.username === 'gerson9557') {
             instructions += 'Answer in spanish.';
         } else if (message.author.username === 'lazyusername5676') {
