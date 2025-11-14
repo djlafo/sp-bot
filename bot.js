@@ -261,13 +261,9 @@ const fetchLastMessages = async (message) => {
 }
 
 const trimChat = (text, name) => {
-    let craftSplit = text.split('Crafted Response');
-    let craftTrim = craftSplit.length > 1 ? craftSplit[craftSplit.length-1] : craftSplit[0];
-    craftSplit = text.split('**Final Answer:**');
-    craftTrim = craftSplit.length > 1 ? craftSplit[craftSplit.length-1] : craftSplit[0];
-    let charSplit = craftTrim.split(`${name}:`);
+    let charSplit = text.split(`${name}:`);
     let grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
-    charSplit = grokTrim.split(`[${name}]:`);
+    charSplit = grokTrim.split(`${name}]:`);
     grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
     return grokTrim;
 }
