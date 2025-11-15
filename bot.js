@@ -230,16 +230,6 @@ const fetchLastMessages = async (message) => {
     const messages = await message.channel.messages.fetch({limit: 20});
     const mapped = messages.map(async dm => {
         let content = trimChat(dm.content, dm.author.username);
-        dm.mentions.users.forEach((user) => {
-            content = content.replaceAll(`<@${user.id}>`, `@${user.username}`);
-            content = content.replaceAll(`<@!${user.id}>`, `@${user.username}`); // handles nickname mention form
-        });
-        if (dm.reference) {
-            const repliedMessage = await dm.fetchReference();
-            const refName = repliedMessage.content.split(':')[0];
-            const replyUser = repliedMessage.author.username === bot.user.username ? refName : repliedMessage.author.displayName;
-            content = `@${replyUser} ${content}`;
-        }
         let contentName = '';
         let contentUser = '';
         if(dm.author.username === bot.user.username) {
@@ -250,10 +240,20 @@ const fetchLastMessages = async (message) => {
             contentName = dm.author.displayName;
             contentUser = dm.author.username;
         }
+        dm.mentions.users.forEach((user) => {
+            content = content.replaceAll(`<@${user.id}>`, `@${user.username}`);
+            content = content.replaceAll(`<@!${user.id}>`, `@${user.username}`); // handles nickname mention form
+        });
+        if (dm.reference) {
+            const repliedMessage = await dm.fetchReference();
+            const refName = repliedMessage.content.split(']')[0]?.split('[')[1];
+            const replyUser = repliedMessage.author.username === bot.user.username ? refName : repliedMessage.author.username;
+            content = `@${replyUser} ${content}`;
+        }
         content = `${contentName}[@${contentUser}]: ${content}`;
         for (let i=0; i < message.embeds.length; i++) {
             const embed = message.embeds[i]; // first embed
-            content += `\n${replyUser} shared a link titled "${embed.title}" with the description "${embed.description}"}`;
+            content += `\n@${contentUser} shared a link (${embed.url}) titled "${embed.title}" with the description "${embed.description}"}`;
         }
         return content;
     });
@@ -263,7 +263,7 @@ const fetchLastMessages = async (message) => {
 const trimChat = (text, name) => {
     let charSplit = text.split(`${name}:`);
     let grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
-    charSplit = grokTrim.split(`${name}]:`);
+    charSplit = grokTrim.split(`${name}]`);
     grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
     return grokTrim;
 }
@@ -274,7 +274,7 @@ const replyToMessage = async (message, character) => {
     }
     const lastMessages = (await fetchLastMessages(message)).reverse();
     const messageString = `The conversation history is as follows: \n${lastMessages.join("\n")}`;
-    // logger.info(messageString);
+    logger.info(messageString);
     try {
         let instructions = `You are ${character.name} in a discord conversation.${character.instructions} ONLY RESPOND WITH WHAT YOU WOULD SAY.  DO NOT BEGIN YOUR RESPONSE WITH YOUR NAME OR USERNAME.  You are responding to the last person in the conversation.`;
         if (message.author.username === 'gerson9557') {
@@ -289,7 +289,7 @@ const replyToMessage = async (message, character) => {
             ],
             model: 'x-ai/grok-4-fast'
         });
-        const grokTrim = trimChat(chatCompletion.choices[0].message.content, character.name);
+        const grokTrim = trimChat(chatCompletion.choices[0].message.content, character.references[0]);
         const response = `${character.name}[@${character.references[0]}]: ${grokTrim}`;
         if (response) {
             const messageContent = {content: response.substring(0,1900), withResponse: true};
