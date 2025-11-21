@@ -287,7 +287,7 @@ const replyToMessage = async (message, character) => {
                 { role: 'user', content: messageString },
                 { role: 'system', content: instructions }
             ],
-            model: 'x-ai/grok-4-fast'
+            model: 'x-ai/grok-4.1-fast'
         });
         const grokTrim = trimChat(chatCompletion.choices[0].message.content, character.references[0]);
         const response = `${character.name}[@${character.references[0]}]: ${grokTrim}`;
