@@ -345,13 +345,8 @@ const replyToMessage = async (message, character) => {
             //         tools: tools,
             //     });
             //     await reply.reply(toolResponse.choices[0].message.content);
-            if (chunk.choices[0].delta.finish_reason === 'stop') {
-                if (buffer.length) {
-                    content += buffer;
-                    buffer = '';
-                }
-                await reply.edit({ content: `${content}`, withResponse: true });
-            }
+            // if (chunk.choices[0].delta.finish_reason === 'stop') {
+            // }
             const token = chunk.choices[0]?.delta?.content || '';
             if (token) {
                 buffer += token;
@@ -368,6 +363,13 @@ const replyToMessage = async (message, character) => {
                 }
             }
         }
+
+        if (buffer.length) {
+            content += buffer;
+            buffer = '';
+        }
+        await reply.edit({ content: `${content}`, withResponse: true });
+
         // if(chatCompletion.choices[0].message.annotations?.length > 0) {
         //     chatCompletion.choices[0].message.annotations.forEach(a => {
         //         response += `\n ${a.url_citation.title}: <${a.url_citation.url}>`
