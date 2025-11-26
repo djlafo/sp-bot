@@ -228,84 +228,151 @@ const characters = [
 
 const fetchLastMessages = async (message) => {
     const messages = await message.channel.messages.fetch({limit: 20});
-    const mapped = messages.map(async dm => {
-        let content = trimChat(dm.content, dm.author.username);
+    // logger.info("-----------");
+    // messages.forEach(m => {
+    //     console.log(JSON.stringify(m, null, 4));
+    // });
+    // logger.info("----------");
+    const messageArr = [];
+    for(const message of messages) {
+        const dm = message[1];
+        let content = dm.content;
         let contentName = '';
         let contentUser = '';
         if(dm.author.username === bot.user.username) {
-            const name = content.split(':')[0];
-            contentName = name.split('[')[0];
-            contentUser = name.split('[')[1]?.split(']')[0] || bot.user.username;
+            if(content.includes("]:")) {
+                const name = content.split(':')[0];
+                contentName = name.split('[@')[0];
+                contentUser = name.split('[@')[1]?.split(']')[0] || bot.user.username;
+                content = content.split(']:').slice(1).join(']:');
+            } else {
+                contentName = bot.user.displayName;
+                contentUser = bot.user.username;
+            }
         } else {
             contentName = dm.author.displayName;
             contentUser = dm.author.username;
         }
         dm.mentions.users.forEach((user) => {
             content = content.replaceAll(`<@${user.id}>`, `@${user.username}`);
-            content = content.replaceAll(`<@!${user.id}>`, `@${user.username}`); // handles nickname mention form
+            content = content.replaceAll(`<@!${user.id}>`, `@${user.username}`);
+            content = content.replaceAll(`<@&${user.id}>`, `@${user.username}`);
         });
         if (dm.reference) {
             const repliedMessage = await dm.fetchReference();
-            const refName = repliedMessage.content.split(']')[0]?.split('[')[1];
+            const refName = repliedMessage.content.split(']')[0]?.split('[@')[1];
             const replyUser = repliedMessage.author.username === bot.user.username ? refName : repliedMessage.author.username;
             content = `@${replyUser} ${content}`;
         }
-        content = `${contentName}[@${contentUser}]: ${content}`;
-        for (let i=0; i < message.embeds.length; i++) {
-            const embed = message.embeds[i]; // first embed
-            content += `\n@${contentUser} shared a link (${embed.url}) titled "${embed.title}" with the description "${embed.description}"}`;
+        for (let i=0; i < dm.embeds.length; i++) {
+            const embed = dm.embeds[i]; // first embed
+            messageArr.push({
+                name: contentUser,
+                content: `shared a link "${embed.url}" titled "${embed.title}" with the description "${embed.description}"}`,
+                role: 'user'
+            });
         }
-        return content;
-    });
-    return await Promise.all(mapped);
-}
-
-const trimChat = (text, name) => {
-    let charSplit = text.split(`${name}:`);
-    let grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
-    charSplit = grokTrim.split(`${name}]`);
-    grokTrim = charSplit.length > 1 ? charSplit[charSplit.length-1] : charSplit[0];
-    return grokTrim;
+        messageArr.push({
+          name: `${contentName}[@${contentUser}]`,
+          role: 'user',
+          content: content
+        });
+    }
+    return messageArr;
 }
 
 const replyToMessage = async (message, character) => {
+    if(message.author.bot && Math.random() > 0.2) return;
+
+    message.channel.sendTyping();
     if(!character) {
         character = characters[0];
     }
-    const lastMessages = (await fetchLastMessages(message)).reverse();
-    const messageString = `The conversation history is as follows: \n${lastMessages.join("\n")}`;
-    logger.info(messageString);
+    let lastMessages = (await fetchLastMessages(message)).reverse();
+    let instructions = `You are ${character.name} in a discord conversation.${character.instructions} ONLY RESPOND WITH WHAT YOU WOULD SAY.  DO NOT BEGIN YOUR RESPONSE WITH YOUR NAME OR USERNAME.  You are responding to the last person in the conversation.`;
+    // if (message.author.username === 'gerson9557') {
+        // instructions += 'Answer in spanish.';
+    // } else if (message.author.username === 'lazyusername5676') {
+        // instructions += 'End the response by telling them to focus on their legacy government code.';
+    // }
+    lastMessages = [{
+        role: 'system',
+        content: instructions
+    }, ...lastMessages];
+    // logger.info("-----------");
+    // lastMessages.forEach(m => {
+    //     console.log(JSON.stringify(m, null, 2));
+    // });
+    // logger.info("----------");
     try {
-        let instructions = `You are ${character.name} in a discord conversation.${character.instructions} ONLY RESPOND WITH WHAT YOU WOULD SAY.  DO NOT BEGIN YOUR RESPONSE WITH YOUR NAME OR USERNAME.  You are responding to the last person in the conversation.`;
-        if (message.author.username === 'gerson9557') {
-            instructions += 'Answer in spanish.';
-        } else if (message.author.username === 'lazyusername5676') {
-            // instructions += 'End the response by telling them to focus on their legacy government code.';
-        }
         const chatCompletion = await chatGPT.chat.completions.create({
-            messages: [
-                { role: 'user', content: messageString },
-                { role: 'system', content: instructions }
-            ],
-            model: 'x-ai/grok-4.1-fast'
-        });
-        const grokTrim = trimChat(chatCompletion.choices[0].message.content, character.references[0]);
-        const response = `${character.name}[@${character.references[0]}]: ${grokTrim}`;
-        if (response) {
-            const messageContent = {content: response.substring(0,1900), withResponse: true};
-            if(message.author.bot) {
-                if(message.author.bot && Math.random() < 0.2) {
-                    await message.reply(messageContent);
+            messages: lastMessages,
+            model: 'x-ai/grok-4.1-fast:free:online',
+            stream: true,
+            // tools: tools,
+            plugins: [
+                {
+                    id: "web",
+                    max_results: 5
                 }
-            } else {
-                let reply = await message.reply(messageContent);
-                for(let currentChar = 1900; currentChar<response.length; currentChar += 1900) {
-                    reply = await reply.reply({content: response.substring(currentChar, currentChar+1900), withResponse: true});
+            ]
+        });
+        let content = `${character.name}[@${character.references[0]}]: `;
+        let buffer = '';
+        let reply = await message.reply(`${content} ...`);
+        message.channel.sendTyping();
+        // const toolCalls = [];
+        for await (const chunk of chatCompletion) {
+            // if (chunk.choices[0].delta.tool_calls) {
+            //     toolCalls.push(...chunk.choices[0].delta.tool_calls);
+            // }
+            // if (chunk.choices[0].delta.finish_reason === 'tool_calls') {
+            //     for(const toolCall of toolCalls) {
+            //         const toolName = toolCall.function.name;
+            //         const { search_params } = JSON.parse(toolCall.function.arguments);
+            //         const toolResponse = await TOOL_MAPPING[toolName](search_params);
+            //         lastMessages.push({
+            //             role: 'tool',
+            //             toolCallId: toolCall.id,
+            //             name: toolName,
+            //             content: JSON.stringify(toolResponse),
+            //         });
+            //     }
+            //     const toolResponse = await chatGPT.chat.completions.create({
+            //         messages: lastMessages,
+            //         model: 'x-ai/grok-4.1-fast:free:online',
+            //         stream: false,
+            //         tools: tools,
+            //     });
+            //     await reply.reply(toolResponse.choices[0].message.content);
+            if (chunk.choices[0].delta.finish_reason === 'stop') {
+                if (buffer.length) {
+                    content += buffer;
+                    buffer = '';
+                }
+                await reply.edit({ content: `${content}`, withResponse: true });
+            }
+            const token = chunk.choices[0]?.delta?.content || '';
+            if (token) {
+                buffer += token;
+                if(buffer.length > 100) {
+                    content+=buffer;
+                    buffer = '';
+                    if(content.length > 1900) {
+                        content = content.substring(1900);
+                        reply = await reply.reply({ content: `${content} ...`, withResponse: true});
+                    } else {
+                        await reply.edit({ content: `${content} ...`, withResponse: true});
+                    }
+                    message.channel.sendTyping();
                 }
             }
-        } else {
-            message.reply({content: 'no response'});
         }
+        // if(chatCompletion.choices[0].message.annotations?.length > 0) {
+        //     chatCompletion.choices[0].message.annotations.forEach(a => {
+        //         response += `\n ${a.url_citation.title}: <${a.url_citation.url}>`
+        //     });
+        // }
     } catch (e) {
         message.reply({content: e.toString()});
     }
@@ -331,7 +398,7 @@ bot.on('messageCreate', async message => {
             await replyToMessage(message, char);
         }
     } catch (e) {
-        logger.error(e.toString());
+        logger.error(e.stack);
     }
 });
 
@@ -622,6 +689,7 @@ const commands = [
         ]
     },
 ];
+
 const rest = new discord.REST({ version: '10' }).setToken(token);
 logger.info('Started refreshing application (/) commands.');
 rest.put(discord.Routes.applicationCommands(client_id), { body: commands }).then(() => {
@@ -630,3 +698,27 @@ rest.put(discord.Routes.applicationCommands(client_id), { body: commands }).then
 }).catch((error) => {
     logger.error(error.message);
 });
+
+// const tools = [
+//     {
+//         "type": "function",
+//         "function": {
+//             "name": "testTool",
+//             "description": "Search for a quote containing the text given",
+//             "parameters": {
+//                 "type": "object",
+//                 "properties": {
+//                     "text": {
+//                         "type": "string",
+//                         "description": "Text to search for in quotes"
+//                     }
+//                 },
+//                 "required": ["person"]
+//             }
+//         }
+//     }
+// ];
+
+// const TOOL_MAPPING = {
+//   searchQuotes,
+// };
