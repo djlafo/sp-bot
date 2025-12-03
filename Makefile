@@ -13,4 +13,4 @@ pull:
 
 run: 
 	docker rm sp-bot || true
-	docker run -d --network=host --env-file ./.env -p 3000:3000 --name sp-bot djlafo/sp-bot
+	docker run -d --network=host --env-file ./.env --name sp-bot djlafo/sp-bot
