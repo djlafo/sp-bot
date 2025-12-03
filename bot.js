@@ -51,6 +51,7 @@ bot.on('messageCreate', async message => {
                 return;
             }
         }
+        let char;
         if (message.mentions.has(bot.user)) {
             await ai.replyToMessage(message, null, bot);
         } else if ((char = (characters.find(c => c.references.some(r => message.content.toLowerCase().includes(`@${r}`)))))) {
