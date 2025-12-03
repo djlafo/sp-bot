@@ -1,11 +1,6 @@
-package-lock.json
 node_modules/*
-auth.json
-.aws/*
-*.txt
+.env
+.vscode
+node_modules
+ca.pem
 quotes.csv
-quotes_backup.csv
-.vscode/*
-bot_error.txt
-bot_output.txt
-bot.log.txt
