@@ -13,4 +13,4 @@ pull:
 
 run: 
 	docker rm sp-bot || true
-	docker run -d --env-file ./.env -p 3000:3000 --name sp-bot djlafo/sp-bot
+	docker run -d --add-host host.docker.internal:host-gateway --env-file ./.env -p 3000:3000 --name sp-bot djlafo/sp-bot
