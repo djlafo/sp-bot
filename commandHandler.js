@@ -3,6 +3,7 @@ import spotify from 'node-spotify-api';
 import { XMLHttpRequest } from 'xmlhttprequest';
 
 import constants from './constants/constants.js';
+import characters from './constants/characters.js';
 
 import quotes from './services/quotes.js';
 
