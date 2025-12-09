@@ -44,15 +44,31 @@ export const fetchLastMessages = async (message, bot) => {
         for (let i=0; i < dm.embeds.length; i++) {
             const embed = dm.embeds[i]; // first embed
             messageArr.push({
-                name: contentUser,
+                name: `${contentName}[@${contentUser}]`,
                 content: `shared a link "${embed.url}" titled "${embed.title}" with the description "${embed.description}"}`,
                 role: 'user'
             });
         }
+        const attachments = dm.attachments
+            .filter(a => a.contentType.startsWith('image'))
+            .map(a =>{
+                return {
+                    type: 'image_url',
+                    image_url: {
+                        url: a.url
+                    }
+                };
+            });
         messageArr.push({
           name: `${contentName}[@${contentUser}]`,
           role: 'user',
-          content: content
+          content: [
+            {
+                type: 'text',
+                text: content
+            },
+            ...attachments
+          ]
         });
     }
     return messageArr;
@@ -84,7 +100,7 @@ export const replyToMessage = async (message, character, bot) => {
     try {
         const chatCompletion = await chatGPT.chat.completions.create({
             messages: lastMessages,
-            model: 'x-ai/grok-4.1-fast:online',
+            model: 'x-ai/grok-4:online',
             stream: true,
             // tools: tools,
             plugins: [

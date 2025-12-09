@@ -1,6 +1,5 @@
 import 'dotenv/config'
 
-import { setTimeout } from 'timers/promises';
 import discord from 'discord.js';
 import logger from 'winston';
 let translate;
