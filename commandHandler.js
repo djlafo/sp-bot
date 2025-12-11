@@ -98,7 +98,7 @@ export async function handleCommand(interaction) {
             if(!length) {
                 interaction.editReply("No length specified");
                 break;
-            } else if(length > 100) {
+            } else if(length > 100 || length <= 0) {
                 interaction.editReply(`If you want to set it to ${length}, you owe me money first`);
                 break;
             }
