@@ -8,6 +8,6 @@ export const quotesTable = pgTable("quotes", {
 });
 
 export const settingsTable = pgTable("settings", {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    guildId: varchar("guild_id").primaryKey().notNull(),
     historyLength: integer("history_length").notNull().default(5),
 })

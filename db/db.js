@@ -32,27 +32,24 @@ export function lower(col) {
   return sql`lower(${col})`;
 }
 
-export async function updateSettings(settings) {
-    const settingsRow = await db.select()
-        .from(settingsTable)
-        .where(eq(settingsTable.id, 1))
-        .limit(1);
-
-    if(settingsRow.length) {
-        await db.update(settingsTable)
-            .set(settings)
-            .where(eq(settingsTable.id, 1));
-    } else {
-        await db.insert(settingsTable).values(settings);
-    }
+export async function updateSettings(guildId, settings) {
+    await db.insert(settingsTable)
+        .values({
+            guildId: guildId,
+            ...settings
+        })
+        .onConflictDoUpdate({
+            target: settingsTable.guildId,
+            set: settings
+        })
     return true;
 }
 
-export async function getSettings() {
-    let settingsRow = await db.select().from(settingsTable).where(eq(settingsTable.id, 1));
+export async function getSettings(guildId) {
+    let settingsRow = await db.select().from(settingsTable).where(eq(settingsTable.guildId, guildId));
     if(settingsRow.length === 0) {
-        await db.insert(settingsTable);
-        settingsRow = await db.select().from(settingsTable).where(eq(settingsTable.id, 1));
+        await db.insert(settingsTable).values({guildId: guildId});
+        settingsRow = await db.select().from(settingsTable).where(eq(settingsTable.guildId, guildId));
     }
 
     if(settingsRow.length === 1) {

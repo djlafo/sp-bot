@@ -6,7 +6,7 @@ import logger from 'winston';
 const chatGPT = new openAI({ apiKey: process.env.gptKey, baseURL: 'https://openrouter.ai/api/v1' });
 
 export const fetchLastMessages = async (message, bot) => {
-    const historyLength = (await getSettings()).historyLength;
+    const historyLength = (await getSettings(message.guildId)).historyLength;
     const messages = await message.channel.messages.fetch({limit: historyLength});
     // logger.info("-----------");
     // messages.forEach(m => {

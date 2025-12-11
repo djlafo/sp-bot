@@ -94,19 +94,16 @@ export async function handleCommand(interaction) {
             await quotes.handleInteraction(interaction);
             break;
         case 'historylength':
-            if(interaction.user.username !== 'djl') {
-                interaction.editReply("go away");
+            const length = interaction.options.getInteger("length");
+            if(!length) {
+                interaction.editReply("No length specified");
+                break;
+            } else if(length > 100) {
+                interaction.editReply(`If you want to set it to ${length}, you owe me money first`);
                 break;
             }
-            const length = interaction.options.getInteger("length");
-            if(length) {
-                const updated = await updateSettings({historyLength: length});
-                if(updated) {
-                    interaction.editReply(`Length set to ${length}`);
-                }
-            } else {
-                interaction.editReply("No length specified");
-            }
+            await updateSettings(interaction.guildId, {historyLength: length});
+            interaction.editReply(`Length set to ${length}`);
             break;
     }
 }
