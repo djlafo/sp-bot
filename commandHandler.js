@@ -1,11 +1,11 @@
 import search from 'youtube-search';
 import spotify from 'node-spotify-api';
-import { XMLHttpRequest } from 'xmlhttprequest';
 
 import constants from './constants/constants.js';
 import characters from './constants/characters.js';
 
 import quotes from './services/quotes.js';
+import { updateSettings } from './db/db.js';
 
 var ytKey = process.env.YT_KEY
 var spotifyClient = new spotify({
@@ -92,6 +92,21 @@ export async function handleCommand(interaction) {
             break;
         case 'quotes':
             await quotes.handleInteraction(interaction);
+            break;
+        case 'historylength':
+            if(interaction.user.username !== 'djl') {
+                interaction.editReply("go away");
+                break;
+            }
+            const length = interaction.options.getInteger("length");
+            if(length) {
+                const updated = await updateSettings({historyLength: length});
+                if(updated) {
+                    interaction.editReply(`Length set to ${length}`);
+                }
+            } else {
+                interaction.editReply("No length specified");
+            }
             break;
     }
 }

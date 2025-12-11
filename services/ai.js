@@ -1,10 +1,13 @@
 import openAI from 'openai';
 import characters from '../constants/characters.js';
+import { getSettings } from '../db/db.js';
+import logger from 'winston';
 
 const chatGPT = new openAI({ apiKey: process.env.gptKey, baseURL: 'https://openrouter.ai/api/v1' });
 
 export const fetchLastMessages = async (message, bot) => {
-    const messages = await message.channel.messages.fetch({limit: 20});
+    const historyLength = (await getSettings()).historyLength;
+    const messages = await message.channel.messages.fetch({limit: historyLength});
     // logger.info("-----------");
     // messages.forEach(m => {
     //     console.log(JSON.stringify(m, null, 4));

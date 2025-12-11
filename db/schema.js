@@ -6,3 +6,8 @@ export const quotesTable = pgTable("quotes", {
     person: varchar().notNull(),
     quote: varchar().notNull()
 });
+
+export const settingsTable = pgTable("settings", {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    historyLength: integer("history_length").notNull().default(5),
+})

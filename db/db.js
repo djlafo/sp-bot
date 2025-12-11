@@ -1,7 +1,8 @@
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { readFileSync } from 'node:fs';
-import { sql } from 'drizzle-orm';
+import { sql, eq } from 'drizzle-orm';
+import { settingsTable } from './schema.js';
 
 let ca;
 try {
@@ -29,4 +30,34 @@ export default db;
 
 export function lower(col) {
   return sql`lower(${col})`;
+}
+
+export async function updateSettings(settings) {
+    const settingsRow = await db.select()
+        .from(settingsTable)
+        .where(eq(settingsTable.id, 1))
+        .limit(1);
+
+    if(settingsRow.length) {
+        await db.update(settingsTable)
+            .set(settings)
+            .where(eq(settingsTable.id, 1));
+    } else {
+        await db.insert(settingsTable).values(settings);
+    }
+    return true;
+}
+
+export async function getSettings() {
+    let settingsRow = await db.select().from(settingsTable).where(eq(settingsTable.id, 1));
+    if(settingsRow.length === 0) {
+        await db.insert(settingsTable);
+        settingsRow = await db.select().from(settingsTable).where(eq(settingsTable.id, 1));
+    }
+
+    if(settingsRow.length === 1) {
+        return settingsRow[0];
+    } else {
+        throw "Can't find settings";
+    }
 }

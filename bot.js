@@ -57,7 +57,7 @@ bot.on('messageCreate', async message => {
             await ai.replyToMessage(message, char, bot);
         }
     } catch (e) {
-        logger.error(e.stack);
+        logger.error(`CODE: ${e.code}, DETAIL ${e.detail}, MESSAGE: ${e.message}, STACK: ${e.stack}`);
     }
 });
 
@@ -78,5 +78,5 @@ rest.put(discord.Routes.applicationCommands(process.env.client_id), { body: comm
 
 process.on('uncaughtException', (error) => {
     if(![10062].includes(error.code))
-        logger.error(error.stack);
+        logger.error(`CODE: ${error.code}, DETAIL ${error.detail}, MESSAGE: ${error.message}, STACK: ${error.stack}`);
 });

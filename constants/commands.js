@@ -88,6 +88,18 @@ export const commands = [
         description: 'generate an accurate point score for your story'
     },
     {
+        name: 'historylength',
+        description: 'Set how far back the AI can see',
+        options: [
+            {
+                name: 'length',
+                required: true,
+                description: "number length",
+                type: 4
+            }
+        ]
+    },
+    {
         name: 'quotes',
         type: 1,
         description: 'grab a quote',

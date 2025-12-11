@@ -72,7 +72,7 @@ export async function handleInteraction(interaction) {
         break;
         case 'add':
             await addQuote(interaction.guildId, interaction.options.getString('name'),interaction.options.getString('quote'));
-            interaction.editReply('Added');
+            interaction.editReply(`Added quote for ${interaction.options.getString('name')}: ${interaction.options.getString('quote')}`);
         break;
     }
 }
