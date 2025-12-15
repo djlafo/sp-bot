@@ -103,7 +103,7 @@ export const replyToMessage = async (message, character, bot) => {
     try {
         const chatCompletion = await chatGPT.chat.completions.create({
             messages: lastMessages,
-            model: 'x-ai/grok-4:online',
+            model: 'x-ai/grok-4.1-fast:online',
             stream: true,
             // tools: tools,
             plugins: [
