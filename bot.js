@@ -42,20 +42,29 @@ bot.on('messageCreate', async message => {
         // if(['lazyusername5676'].includes(message.author.username)) {
         //     message.react('🖕');
         // }
+        let reply = false;
         const params = {message, bot};
         if(message.reference) {
             let ref = await message.fetchReference();
             if(ref.author.username === bot.user.username) {
                 params.character = characters.find(c => ref.content.startsWith(c.name));
+                reply = true;
             }
-        } else if (!message.mentions.has(bot.user)) {
-             params.character = (characters.find(c => c.references.some(r => message.content.toLowerCase().includes(`@${r}`))));
+        }
+        if (message.mentions.has(bot.user)) {
+            reply = true;
+        } else {
+            const refCharacter = (characters.find(c => c.references.some(r => message.content.toLowerCase().includes(`@${r}`))));
+            if(refCharacter) {
+                params.character = refCharacter;
+                reply = true;
+            }
         }
         if(params.character?.references[0] === 'imagemaker') {
             params.model = 'google/gemini-2.5-flash-image-preview';
             params.modalities = ["image", "text"];
         }
-        await ai.replyToMessage(params);
+        if(reply) await ai.replyToMessage(params);
     } catch (e) {
         logger.error(`CODE: ${e.code}, DETAIL ${e.detail}, MESSAGE: ${e.message}, STACK: ${e.stack}`);
     }
