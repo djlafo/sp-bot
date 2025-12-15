@@ -5,6 +5,11 @@ export const characters = [
         instructions: 'You are a simple discord bot built to answer questions.'
     },
     {
+        name: 'Image Maker',
+        references: ['imagemaker'],
+        instructions: 'You generate images for users on the server.'
+    },
+    {
         name: 'Ash',
         references: ['ash'],
         instructions: 'You are Ash from the anime Pokemon.'

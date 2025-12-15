@@ -2,6 +2,7 @@ import openAI from 'openai';
 import characters from '../constants/characters.js';
 import { getSettings } from '../db/db.js';
 import logger from 'winston';
+import { MessageFlags } from 'discord.js';
 
 const chatGPT = new openAI({ apiKey: process.env.gptKey, baseURL: 'https://openrouter.ai/api/v1' });
 
@@ -77,7 +78,7 @@ export const fetchLastMessages = async (message, bot) => {
     return messageArr;
 }
 
-export const replyToMessage = async (message, character, bot) => {
+export const replyToMessage = async ({ message, character, bot, model="x-ai/grok-4.1-fast:online", modalities=["text"]}) => {
     if(message.author.bot && Math.random() > 0.2) return;
 
     message.channel.sendTyping();
@@ -103,22 +104,46 @@ export const replyToMessage = async (message, character, bot) => {
     try {
         const chatCompletion = await chatGPT.chat.completions.create({
             messages: lastMessages,
-            model: 'x-ai/grok-4.1-fast:online',
-            stream: true,
+            model,
+            stream: false,
             // tools: tools,
             plugins: [
                 {
                     id: "web",
                     max_results: 5
                 }
-            ]
+            ],
+            modalities,
         });
-        let content = `${character.name}[@${character.references[0]}]: `;
-        let buffer = '';
-        let reply = await message.reply(`${content} ...`);
+        const prepend = `${character.name}[@${character.references[0]}]: `;
+        // let content = `${character.name}[@${character.references[0]}]: `;
+        // let buffer = '';
+        // let reply = await message.reply(`${content} ...`);
         message.channel.sendTyping();
+        const replyMessage = chatCompletion.choices[0].message;
+        let content = replyMessage.content;
+        let images;
+        if(replyMessage.images?.length) {
+            images = replyMessage.images.map((img, ind) => {
+                return {
+                    attachment: Buffer.from(img.image_url.url.split(',')[1], 'base64'),
+                    name: `image${ind}.png`
+                };
+            });
+        }
+        let reply = await message.reply({
+            content: `${prepend} ${content.substring(0,1900)}`,
+            files: images,
+            flags: [MessageFlags.SuppressEmbeds]
+        });
+        for(let i=1900; i<content.length; i+=1900) {
+            reply = await reply.reply({
+                content: `${prepend} ${content.substring(i, i+1900)}`,
+                flags: [MessageFlags.SuppressEmbeds]
+            });
+        }
         // const toolCalls = [];
-        for await (const chunk of chatCompletion) {
+        // for await (const chunk of chatCompletion) {
             // if (chunk.choices[0].delta.tool_calls) {
             //     toolCalls.push(...chunk.choices[0].delta.tool_calls);
             // }
@@ -143,28 +168,27 @@ export const replyToMessage = async (message, character, bot) => {
             //     await reply.reply(toolResponse.choices[0].message.content);
             // if (chunk.choices[0].delta.finish_reason === 'stop') {
             // }
-            const token = chunk.choices[0]?.delta?.content || '';
-            if (token) {
-                buffer += token;
-                if(buffer.length > 100) {
-                    content+=buffer;
-                    buffer = '';
-                    if(content.length > 1900) {
-                        content = content.substring(1900);
-                        reply = await reply.reply({ content: `${content} ...`, withResponse: true});
-                    } else {
-                        await reply.edit({ content: `${content} ...`, withResponse: true});
-                    }
-                    message.channel.sendTyping();
-                }
-            }
-        }
-
-        if (buffer.length) {
-            content += buffer;
-            buffer = '';
-        }
-        await reply.edit({ content: `${content}`, withResponse: true });
+        //     const token = chunk.choices[0]?.delta?.content || '';
+        //     if (token) {
+        //         buffer += token;
+        //         if(buffer.length > 100) {
+        //             content+=buffer;
+        //             buffer = '';
+        //             if(content.length > 1900) {
+        //                 content = content.substring(1900);
+        //                 reply = await reply.reply({ content: `${content} ...`, withResponse: true});
+        //             } else {
+        //                 await reply.edit({ content: `${content} ...`, withResponse: true});
+        //             }
+        //             message.channel.sendTyping();
+        //         }
+        //     }
+        // }
+        // if (buffer.length) {
+        //     content += buffer;
+        //     buffer = '';
+        // }
+        // await reply.edit({ content: `${content}`, withResponse: true });
 
         // if(chatCompletion.choices[0].message.annotations?.length > 0) {
         //     chatCompletion.choices[0].message.annotations.forEach(a => {

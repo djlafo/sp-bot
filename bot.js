@@ -42,20 +42,20 @@ bot.on('messageCreate', async message => {
         // if(['lazyusername5676'].includes(message.author.username)) {
         //     message.react('🖕');
         // }
+        const params = {message, bot};
         if(message.reference) {
             let ref = await message.fetchReference();
             if(ref.author.username === bot.user.username) {
-                const character = characters.find(c => ref.content.startsWith(c.name));
-                await ai.replyToMessage(message, character, bot);
-                return;
+                params.character = characters.find(c => ref.content.startsWith(c.name));
             }
+        } else if (!message.mentions.has(bot.user)) {
+             params.character = (characters.find(c => c.references.some(r => message.content.toLowerCase().includes(`@${r}`))));
         }
-        let char;
-        if (message.mentions.has(bot.user)) {
-            await ai.replyToMessage(message, null, bot);
-        } else if ((char = (characters.find(c => c.references.some(r => message.content.toLowerCase().includes(`@${r}`)))))) {
-            await ai.replyToMessage(message, char, bot);
+        if(params.character.references[0] === 'imagemaker') {
+            params.model = 'google/gemini-2.5-flash-image-preview';
+            params.modalities = ["image", "text"];
         }
+        await ai.replyToMessage(params);
     } catch (e) {
         logger.error(`CODE: ${e.code}, DETAIL ${e.detail}, MESSAGE: ${e.message}, STACK: ${e.stack}`);
     }
@@ -64,7 +64,7 @@ bot.on('messageCreate', async message => {
 bot.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
     await interaction.deferReply();
-    await commandHandler.handleCommand(interaction);
+    await commandHandler.handleCommand(interaction, bot);
 });
 
 const rest = new discord.REST({ version: '10' }).setToken(process.env.token);
