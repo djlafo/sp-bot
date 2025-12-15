@@ -78,7 +78,7 @@ export const fetchLastMessages = async (message, bot) => {
     return messageArr;
 }
 
-export const replyToMessage = async ({ message, character, bot, model="x-ai/grok-4.1-fast:online", modalities=["text"]}) => {
+export const replyToMessage = async ({ message, character, bot, model="x-ai/grok-4.1-fast:online", modalities=["text"], plugins=[{id: "web",max_results: 5}]}) => {
     if(message.author.bot && Math.random() > 0.2) return;
 
     message.channel.sendTyping();
@@ -107,12 +107,7 @@ export const replyToMessage = async ({ message, character, bot, model="x-ai/grok
             model,
             stream: false,
             // tools: tools,
-            plugins: [
-                {
-                    id: "web",
-                    max_results: 5
-                }
-            ],
+            plugins,
             modalities,
         });
         const prepend = `${character.name}[@${character.references[0]}]: `;
