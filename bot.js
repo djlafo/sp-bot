@@ -51,7 +51,7 @@ bot.on('messageCreate', async message => {
         } else if (!message.mentions.has(bot.user)) {
              params.character = (characters.find(c => c.references.some(r => message.content.toLowerCase().includes(`@${r}`))));
         }
-        if(params.character.references[0] === 'imagemaker') {
+        if(params.character?.references[0] === 'imagemaker') {
             params.model = 'google/gemini-2.5-flash-image-preview';
             params.modalities = ["image", "text"];
         }
