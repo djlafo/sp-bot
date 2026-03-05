@@ -127,7 +127,7 @@ export const replyToMessage = async ({ message, character, bot, model=process.en
             });
         }
         let reply = await message.reply({
-            content: `${prepend} ${content ? content.substring(0,1900) || ''}`,
+            content: `${prepend} ${content ? content.substring(0,1900) : ''}`,
             files: images,
             flags: [MessageFlags.SuppressEmbeds]
         });
