@@ -61,7 +61,7 @@ bot.on('messageCreate', async message => {
             }
         }
         if(params.character?.references[0] === 'imagemaker') {
-            params.model = 'google/gemini-2.5-flash-image-preview';
+            params.model = process.env.image_model;
             params.modalities = ["image", "text"];
             params.plugins = [];
         }

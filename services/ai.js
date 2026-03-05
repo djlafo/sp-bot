@@ -78,7 +78,7 @@ export const fetchLastMessages = async (message, bot) => {
     return messageArr;
 }
 
-export const replyToMessage = async ({ message, character, bot, model="x-ai/grok-4.1-fast:online", modalities=["text"], plugins=[{id: "web",max_results: 5}]}) => {
+export const replyToMessage = async ({ message, character, bot, model=process.env.ai_model, modalities=["text"], plugins=[{id: "web",max_results: 5}]}) => {
     if(message.author.bot && Math.random() > 0.2) return;
 
     message.channel.sendTyping();
@@ -127,15 +127,17 @@ export const replyToMessage = async ({ message, character, bot, model="x-ai/grok
             });
         }
         let reply = await message.reply({
-            content: `${prepend} ${content.substring(0,1900)}`,
+            content: `${prepend} ${content ? content.substring(0,1900) || ''}`,
             files: images,
             flags: [MessageFlags.SuppressEmbeds]
         });
-        for(let i=1900; i<content.length; i+=1900) {
-            reply = await reply.reply({
-                content: `${prepend} ${content.substring(i, i+1900)}`,
-                flags: [MessageFlags.SuppressEmbeds]
-            });
+        if(content) {
+            for(let i=1900; i<content.length; i+=1900) {
+                reply = await reply.reply({
+                    content: `${prepend} ${content.substring(i, i+1900)}`,
+                    flags: [MessageFlags.SuppressEmbeds]
+                });
+            }
         }
         // const toolCalls = [];
         // for await (const chunk of chatCompletion) {
