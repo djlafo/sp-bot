@@ -115,6 +115,7 @@ export const replyToMessage = async ({ message, character, bot, model = process.
         // let buffer = '';
         // let reply = await message.reply(`${content} ...`);
         message.channel.sendTyping();
+        logger.info(`AI response: ${JSON.stringify(chatCompletion)}`);
         const replyMessage = chatCompletion.choices[0].message;
         let content = replyMessage.content;
         let images;
