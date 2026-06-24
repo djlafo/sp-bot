@@ -8,20 +8,20 @@ const chatGPT = new openAI({ apiKey: process.env.gptKey, baseURL: 'https://openr
 
 export const fetchLastMessages = async (message, bot) => {
     const historyLength = (await getSettings(message.guildId)).historyLength;
-    const messages = await message.channel.messages.fetch({limit: historyLength});
+    const messages = await message.channel.messages.fetch({ limit: historyLength });
     // logger.info("-----------");
     // messages.forEach(m => {
     //     console.log(JSON.stringify(m, null, 4));
     // });
     // logger.info("----------");
     const messageArr = [];
-    for(const message of messages) {
+    for (const message of messages) {
         const dm = message[1];
         let content = dm.content;
         let contentName = '';
         let contentUser = '';
-        if(dm.author.username === bot.user.username) {
-            if(content.includes("]:")) {
+        if (dm.author.username === bot.user.username) {
+            if (content.includes("]:")) {
                 const name = content.split(':')[0];
                 contentName = name.split('[@')[0];
                 contentUser = name.split('[@')[1]?.split(']')[0] || bot.user.username;
@@ -45,7 +45,7 @@ export const fetchLastMessages = async (message, bot) => {
             const replyUser = repliedMessage.author.username === bot.user.username ? refName : repliedMessage.author.username;
             content = `@${replyUser} ${content}`;
         }
-        for (let i=0; i < dm.embeds.length; i++) {
+        for (let i = 0; i < dm.embeds.length; i++) {
             const embed = dm.embeds[i]; // first embed
             messageArr.push({
                 name: `${contentName}[@${contentUser}]`,
@@ -55,7 +55,7 @@ export const fetchLastMessages = async (message, bot) => {
         }
         const attachments = dm.attachments
             .filter(a => a.contentType.startsWith('image'))
-            .map(a =>{
+            .map(a => {
                 return {
                     type: 'image_url',
                     image_url: {
@@ -64,33 +64,33 @@ export const fetchLastMessages = async (message, bot) => {
                 };
             });
         messageArr.push({
-          name: `${contentName}[@${contentUser}]`,
-          role: 'user',
-          content: [
-            {
-                type: 'text',
-                text: content
-            },
-            ...attachments
-          ]
+            name: `${contentName}[@${contentUser}]`,
+            role: 'user',
+            content: [
+                {
+                    type: 'text',
+                    text: content
+                },
+                ...attachments
+            ]
         });
     }
     return messageArr;
 }
 
-export const replyToMessage = async ({ message, character, bot, model=process.env.ai_model, modalities=["text"], plugins=[{id: "web",max_results: 5}]}) => {
-    if(message.author.bot && Math.random() > 0.2) return;
+export const replyToMessage = async ({ message, character, bot, model = process.env.ai_model, modalities = ["text"], plugins = [{ id: "web", max_results: 5 }] }) => {
+    if (message.author.bot && Math.random() > 0.2) return;
 
     message.channel.sendTyping();
-    if(!character) {
+    if (!character) {
         character = characters[0];
     }
     let lastMessages = (await fetchLastMessages(message, bot)).reverse();
     let instructions = `You are ${character.name} in a discord conversation.${character.instructions} ONLY RESPOND WITH WHAT YOU WOULD SAY.  DO NOT BEGIN YOUR RESPONSE WITH YOUR NAME OR USERNAME.  You are responding to the last person in the conversation.`;
     // if (message.author.username === 'gerson9557') {
-        // instructions += 'Answer in spanish.';
+    // instructions += 'Answer in spanish.';
     // } else if (message.author.username === 'lazyusername5676') {
-        // instructions += 'End the response by telling them to focus on their legacy government code.';
+    // instructions += 'End the response by telling them to focus on their legacy government code.';
     // }
     lastMessages = [{
         role: 'system',
@@ -118,7 +118,7 @@ export const replyToMessage = async ({ message, character, bot, model=process.en
         const replyMessage = chatCompletion.choices[0].message;
         let content = replyMessage.content;
         let images;
-        if(replyMessage.images?.length) {
+        if (replyMessage.images?.length) {
             images = replyMessage.images.map((img, ind) => {
                 return {
                     attachment: Buffer.from(img.image_url.url.split(',')[1], 'base64'),
@@ -127,44 +127,44 @@ export const replyToMessage = async ({ message, character, bot, model=process.en
             });
         }
         let reply = await message.reply({
-            content: `${prepend} ${content ? content.substring(0,1900) : ''}`,
+            content: `${prepend} ${content ? content.substring(0, 1900) : ''}`,
             files: images,
             flags: [MessageFlags.SuppressEmbeds]
         });
-        if(content) {
-            for(let i=1900; i<content.length; i+=1900) {
+        if (content) {
+            for (let i = 1900; i < content.length; i += 1900) {
                 reply = await reply.reply({
-                    content: `${prepend} ${content.substring(i, i+1900)}`,
+                    content: `${prepend} ${content.substring(i, i + 1900)}`,
                     flags: [MessageFlags.SuppressEmbeds]
                 });
             }
         }
         // const toolCalls = [];
         // for await (const chunk of chatCompletion) {
-            // if (chunk.choices[0].delta.tool_calls) {
-            //     toolCalls.push(...chunk.choices[0].delta.tool_calls);
-            // }
-            // if (chunk.choices[0].delta.finish_reason === 'tool_calls') {
-            //     for(const toolCall of toolCalls) {
-            //         const toolName = toolCall.function.name;
-            //         const { search_params } = JSON.parse(toolCall.function.arguments);
-            //         const toolResponse = await TOOL_MAPPING[toolName](search_params);
-            //         lastMessages.push({
-            //             role: 'tool',
-            //             toolCallId: toolCall.id,
-            //             name: toolName,
-            //             content: JSON.stringify(toolResponse),
-            //         });
-            //     }
-            //     const toolResponse = await chatGPT.chat.completions.create({
-            //         messages: lastMessages,
-            //         model: 'x-ai/grok-4.1-fast:free:online',
-            //         stream: false,
-            //         tools: tools,
-            //     });
-            //     await reply.reply(toolResponse.choices[0].message.content);
-            // if (chunk.choices[0].delta.finish_reason === 'stop') {
-            // }
+        // if (chunk.choices[0].delta.tool_calls) {
+        //     toolCalls.push(...chunk.choices[0].delta.tool_calls);
+        // }
+        // if (chunk.choices[0].delta.finish_reason === 'tool_calls') {
+        //     for(const toolCall of toolCalls) {
+        //         const toolName = toolCall.function.name;
+        //         const { search_params } = JSON.parse(toolCall.function.arguments);
+        //         const toolResponse = await TOOL_MAPPING[toolName](search_params);
+        //         lastMessages.push({
+        //             role: 'tool',
+        //             toolCallId: toolCall.id,
+        //             name: toolName,
+        //             content: JSON.stringify(toolResponse),
+        //         });
+        //     }
+        //     const toolResponse = await chatGPT.chat.completions.create({
+        //         messages: lastMessages,
+        //         model: 'x-ai/grok-4.1-fast:free:online',
+        //         stream: false,
+        //         tools: tools,
+        //     });
+        //     await reply.reply(toolResponse.choices[0].message.content);
+        // if (chunk.choices[0].delta.finish_reason === 'stop') {
+        // }
         //     const token = chunk.choices[0]?.delta?.content || '';
         //     if (token) {
         //         buffer += token;
@@ -193,7 +193,8 @@ export const replyToMessage = async ({ message, character, bot, model=process.en
         //     });
         // }
     } catch (e) {
-        message.reply({content: e.toString()});
+        logger.error(`CODE: ${e.code}, DETAIL ${e.detail}, MESSAGE: ${e.message}, STACK: ${e.stack}`);
+        message.reply({ content: e.toString() });
     }
 }
 
