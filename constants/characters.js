@@ -10,6 +10,11 @@ export const characters = [
         instructions: 'You generate images for users on the server.'
     },
     {
+        name: 'Nerd',
+        references: ['nerd'],
+        instructions: 'You are a nerd in charge of getting information as thoroughly and objectively as possible.'
+    },
+    {
         name: 'Ash',
         references: ['ash'],
         instructions: 'You are Ash from the anime Pokemon.'

@@ -21,11 +21,13 @@ logger.add(new logger.transports.Console, {
 logger.level = 'debug';
 
 // Initialize Discord Bot
-var bot = new discord.Client({ intents: [
-    discord.GatewayIntentBits.MessageContent, 
-    discord.GatewayIntentBits.GuildMessages, 
-    discord.GatewayIntentBits.GuildMembers, discord.GatewayIntentBits.Guilds
-]});
+var bot = new discord.Client({
+    intents: [
+        discord.GatewayIntentBits.MessageContent,
+        discord.GatewayIntentBits.GuildMessages,
+        discord.GatewayIntentBits.GuildMembers, discord.GatewayIntentBits.Guilds
+    ]
+});
 
 bot.on('ready', () => {
     logger.info(`Logged in as: ${bot.user.tag}`);
@@ -38,15 +40,15 @@ bot.on('shardDisconnect', (event, id) => {
 
 bot.on('messageCreate', async message => {
     try {
-        if(message.author.username === bot.user.username) return;
+        if (message.author.username === bot.user.username) return;
         // if(['lazyusername5676'].includes(message.author.username)) {
         //     message.react('🖕');
         // }
         let reply = false;
-        const params = {message, bot};
-        if(message.reference) {
+        const params = { message, bot };
+        if (message.reference) {
             let ref = await message.fetchReference();
-            if(ref.author.username === bot.user.username) {
+            if (ref.author.username === bot.user.username) {
                 params.character = characters.find(c => ref.content.startsWith(c.name));
                 reply = true;
             }
@@ -55,17 +57,19 @@ bot.on('messageCreate', async message => {
             reply = true;
         } else {
             const refCharacter = (characters.find(c => c.references.some(r => message.content.toLowerCase().includes(`@${r}`))));
-            if(refCharacter) {
+            if (refCharacter) {
                 params.character = refCharacter;
                 reply = true;
             }
         }
-        if(params.character?.references[0] === 'imagemaker') {
+        if (params.character?.references[0] === 'imagemaker') {
             params.model = process.env.image_model;
             params.modalities = ["image", "text"];
             params.plugins = [];
+        } else if (params.character?.references[0] === 'nerd') {
+            params.model = process.env.nerd_model;
         }
-        if(reply) await ai.replyToMessage(params);
+        if (reply) await ai.replyToMessage(params);
     } catch (e) {
         logger.error(`CODE: ${e.code}, DETAIL ${e.detail}, MESSAGE: ${e.message}, STACK: ${e.stack}`);
     }
@@ -87,6 +91,6 @@ rest.put(discord.Routes.applicationCommands(process.env.client_id), { body: comm
 });
 
 process.on('uncaughtException', (error) => {
-    if(![10062].includes(error.code))
+    if (![10062].includes(error.code))
         logger.error(`CODE: ${error.code}, DETAIL ${error.detail}, MESSAGE: ${error.message}, STACK: ${error.stack}`);
 });
